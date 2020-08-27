@@ -1,0 +1,9 @@
+---
+- name: Install docker-machine
+  when: docker_machine_version is defined
+  get_url:
+    url: https://github.com/docker/machine/releases/download/v{{ docker_machine_version }}/docker-machine-Linux-x86_64
+    dest: /usr/local/bin/docker-machine
+    mode: 0777
+    force: true
+    timeout: 5

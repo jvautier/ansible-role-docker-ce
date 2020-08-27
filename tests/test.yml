@@ -1,0 +1,16 @@
+---
+- hosts: all
+  name: boxes.docker-ce
+  roles:
+    - role: boxes.docker-ce
+      boxes.docker-ce_install: true
+      boxes.docker-ce_daemon:
+        log-driver: json-file
+        debug: false
+        experimental: true
+        hosts:
+          - unix:///var/run/docker.sock
+          - tcp://0.0.0.0:2375
+        metrics-addr: 0.0.0.0:9999
+      boxes.docker-ce_users:
+        - name: vagrant

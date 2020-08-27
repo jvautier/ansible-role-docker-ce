@@ -1,0 +1,80 @@
+---
+- name: Remove legacy packages
+  apt:
+    name: "{{ package_to_remove_docker_ce }}"
+    state: absent
+  loop_control:
+    loop_var: package_to_remove_docker_ce
+  loop:
+    - docker
+    - docker-engine
+    - docker.io
+
+- name: Install required packages
+  apt:
+    name: "{{ package_docker_ce }}"
+    state: present
+  loop_control:
+    loop_var: package_docker_ce
+  loop:
+    - apt-transport-https
+    - ca-certificates
+    - software-properties-common
+
+- name: Add gpg key
+  apt_key:
+    url: https://download.docker.com/linux/{{ ansible_distribution|lower }}/gpg
+    state: present
+    id: 9DC858229FC7DD38854AE2D88D81803C0EBFCD88
+
+- name: "Add apt repositories"
+  apt_repository:
+    state: present
+    update_cache: true
+    repo: "deb [arch=amd64] https://download.docker.com/linux/{{ ansible_distribution|lower }} {{ ansible_distribution_release|lower }} {{ repository_channel_docker_ce }}"
+    filename: "docker-ce-{{ ansible_distribution|lower }}-{{ ansible_distribution_release|lower }}-{{ repository_channel_docker_ce }}"
+  loop_control:
+    loop_var: repository_channel_docker_ce
+  loop:
+    - stable
+    # - edge
+    # - test
+
+# - name: "Remove apt repositories"
+#   apt_repository:
+#     state: absent
+#     update_cache: yes
+#     repo: "deb [arch=amd64] https://download.docker.com/linux/{{ ansible_distribution|lower }} {{ ansible_distribution_release|lower }} {{item}}"
+#     filename: "docker-{{item}}"
+#   loop:
+#     []
+#     # - stable
+#     # - edge
+#     # - test
+
+- name: Install latest docker-ce
+  when: docker_ce_version == "latest"
+  apt:
+    name: "docker-ce"
+    state: present
+    update_cache: true
+    # TODO(jvautier): remove force ?
+    force: true
+
+- name: "Install docker-ce <= 18.06.1"
+  when: docker_ce_version is defined and docker_ce_version != "latest" and docker_ce_version <= "18.06.1"
+  apt:
+    name: "docker-ce={{ docker_ce_version }}*"
+    state: present
+    update_cache: true
+    # TODO(jvautier): remove force ?
+    force: true
+
+- name: "Install docker-ce > 18.06.1"
+  when: docker_ce_version is defined and docker_ce_version != "latest" and docker_ce_version > "18.06.1"
+  apt:
+    name: "docker-ce=5:{{ docker_ce_version }}*"
+    state: present
+    update_cache: true
+    # TODO(jvautier): remove force ?
+    force: true

@@ -1,0 +1,22 @@
+---
+- hosts: all
+  name: boxes-docker-ce
+  environment:
+    http_proxy: http://proxy.ubisoft.org:3128
+    https_proxy: http://proxy.ubisoft.org:3128
+    no_proxy: ::1,localhost,127.0.0.1,.local,.ubisoft.org,.ubisoft.onbe
+  roles:
+    - role: boxes-docker-ce
+      boxes_docker_ce_install: true
+      # boxes_docker_ce_version: 18.03.1~ce-0
+      boxes_docker_ce_daemon:
+        log-driver: json-file
+        debug: false
+        experimental: true
+        hosts:
+          - unix:///var/run/docker.sock
+          - tcp://0.0.0.0:2375
+        metrics-addr: 0.0.0.0:9999
+      boxes_docker_ce_docker_app_version: v0.6.0
+      boxes_docker_ce_users:
+        - name: vagrant

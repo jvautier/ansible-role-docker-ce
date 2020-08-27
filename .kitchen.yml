@@ -1,0 +1,50 @@
+---
+# driver:
+#   name: vagrant
+
+verifier:
+  name: inspec
+
+provisioner:
+  name: ansible_playbook
+  hosts: all
+  ansible_version: latest
+  require_ansible_repo: true
+  require_chef_for_busser: false
+  require_ruby_for_busser: false
+  ansible_verbose: true
+  extra_vars:
+    github_token: <%= ENV['GITHUB_PERSONAL_TOKEN'] %>
+
+platforms:
+  - name: ubuntu
+    driver: vagrant
+    driver_config:
+      box: bento/ubuntu-18.04
+  - name: centos
+    driver: vagrant
+    driver_config:
+      box: bento/centos-7.5
+  - name: debian
+    driver: vagrant
+    driver_config:
+      box: bento/debian-9.5
+  - name: ec2
+    driver: ec2
+    driver_config:
+      image_id: ami-96a818fe
+      security_group_ids: ["sg-0db558851800d34b4"]
+      subnet_id: subnet-3d73cd13
+      region: us-east-1
+      availability_zone: a
+      tags:
+        test: true
+      require_chef_omnibus: false
+      iam_profile_name: chef-client
+      instance_type: m3.medium
+      associate_public_ip: true
+      interface: dns
+
+suites:
+  - name: default
+  - name: latest

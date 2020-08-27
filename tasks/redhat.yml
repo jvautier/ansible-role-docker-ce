@@ -1,0 +1,47 @@
+---
+- name: Remove legacy packages
+  when: ansible_distribution == 'CentOS'
+  yum:
+    name: "{{ item }}"
+    state: absent
+  loop:
+    - docker
+    - docker-client
+    - docker-client-latest
+    - docker-common
+    - docker-latest
+    - docker-latest-logrotate
+    - docker-logrotate
+    - docker-selinux
+    - docker-engine-selinux
+    - docker-engine
+
+- name: Add gpg key
+  when: ansible_distribution == 'CentOS'
+  rpm_key:
+    key: https://download.docker.com/linux/centos/gpg
+    state: present
+
+- name: Add stable repository
+  when: ansible_distribution == 'CentOS'
+  get_url:
+    url: https://download.docker.com/linux/centos/docker-ce.repo
+    dest: /etc/yum.repos.d/docker-ce.repo
+    force: true
+    owner: root
+    group: root
+    mode: 0644
+
+- name: Install docker-ce latest
+  when: docker_ce_version is undefined
+  package:
+    name: docker-ce
+    state: present
+    update_cache: true
+
+- name: Install docker-ce-{{ docker_ce_version }}
+  when: docker_ce_version is defined
+  package:
+    name: docker-ce-{{ docker_ce_version }}*
+    state: present
+    update_cache: true

@@ -1,0 +1,17 @@
+---
+- name: Install docker-app
+  when: docker_app_version is defined
+  unarchive:
+    src: https://github.com/docker/app/releases/download/v{{docker_app_version }}/docker-app-linux.tar.gz
+    dest: /usr/local/bin
+    mode: 0777
+    force: true
+    remote_src: true
+
+- name: Install docker-app - move /usr/local/bin/docker-app-linux
+  when: docker_app_version is defined
+  file:
+    src: /usr/local/bin/docker-app-standalone-linux
+    path: /usr/local/bin/docker-app
+    state: hard
+    force: true

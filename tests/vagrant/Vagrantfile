@@ -1,0 +1,43 @@
+$role_name = "boxes.docker-ce"
+$bento_boxes = [
+  'ubuntu-18.04',
+  'centos-7.5',
+  'debian-9.5'
+]
+Vagrant.configure("2") do |config|
+
+  if Vagrant.has_plugin?("vagrant-proxyconf")
+    config.proxy.enabled = true
+  end
+
+  # config.vm.synced_folder ".", "/vagrant", disabled: true
+  # if ENV['ANSIBLE_VAULT_FILE_PATH']
+  #   config.vm.synced_folder "#{ENV['ANSIBLE_VAULT_FILE_PATH']}/..", "/ansible/vault"
+  # end
+
+  config.vm.synced_folder "./../..", "/roles/#{$role_name}"
+  config.vm.network :private_network, type: "dhcp"
+  config.vm.provider "virtualbox" do |v|
+    v.memory = 2048
+    v.cpus = 2
+  end
+
+  $bento_boxes.each do |box_name|
+    config.vm.define "#{$role_name}-#{box_name}" do |node|
+      node.vm.box = "bento/#{box_name}"
+    end
+  end
+
+  config.vm.provision "ansible_local" do |ansible|
+    ansible.playbook = "/roles/#{$role_name}/tests/test.yml"
+    ansible.config_file = "/roles/#{$role_name}/tests/vagrant/ansible.cfg"
+    ansible.version = '2.7.2'
+    ansible.compatibility_mode = '2.0'
+    ansible.install_mode = 'pip'
+    # ansible.vault_password_file = "#{ENV['ANSIBLE_VAULT_PASSWORD_FILE']}"
+    ansible.extra_vars = {
+      'github_token' => ENV['GITHUB_PERSONAL_TOKEN']
+    }
+  end
+
+end

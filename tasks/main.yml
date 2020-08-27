@@ -1,0 +1,102 @@
+---
+- name: Include ansible_distribution and ansible_os_family tasks
+  include: "{{ item }}"
+  with_first_found:
+    - "{{ ansible_distribution | lower }}.yml"
+    - "{{ ansible_os_family | lower }}.yml"
+
+- name: Add docker group
+  group:
+    name: docker
+    state: present
+
+- name: Add users {{ docker_ce_users | map(attribute='name') | join(',') }} to docker group
+  when: docker_ce_users is defined
+  user:
+    name: "{{ item.name }}"
+    groups: docker
+    append: true
+  loop: "{{ docker_ce_users }}"
+
+- name: Ensures /etc/systemd/system/docker.service.d/ dir exists
+  file:
+    path: /etc/systemd/system/docker.service.d/
+    state: directory
+
+- name: Add /etc/systemd/system/docker.service.d/override.conf
+  register: docker_config
+  template:
+    src: files/override.conf
+    dest: /etc/systemd/system/docker.service.d/override.conf
+
+- name: Ensures /etc/docker/ dir exists
+  file:
+    path: /etc/docker/
+    state: directory
+
+- name: Template /etc/docker/daemon.json
+  register: docker_daemon_config
+  when: docker_ce_daemon is defined
+  copy:
+    content: "{{ docker_ce_daemon | to_nice_json }}"
+    dest: "/etc/docker/daemon.json"
+
+- name: Systemd daemon reload
+  when: docker_daemon_config.changed or docker_config.changed
+  systemd:
+    daemon_reload: true
+
+- name: Service restart
+  when: docker_daemon_config.changed or docker_config.changed
+  service:
+    name: docker
+    state: restarted
+    enabled: true
+
+- name: Install docker-compose
+  import_tasks: clis/docker-compose.yml
+
+# - name: Install docker-machine
+#   import_tasks: clis/docker-machine.yml
+
+# - name: Install docker-app
+#   import_tasks: clis/docker-app.yml
+
+- name: Create auth payload
+  when: docker_ce_auths is defined
+  set_fact:
+    auths: {}
+
+- name: Docker auth
+  when: docker_ce_auths is defined
+  set_fact:
+    auths: "{{ auths | combine( item ) }}"
+  loop: "{{ docker_ce_auths }}"
+
+# - name: Create config payload
+#   when: docker_ce_auths is defined
+#   set_fact:
+#     config:
+#       auths: "{{ auths }}"
+
+# - name: Ensures docker config dir exist in user home
+#   when: docker_ce_auths is defined
+#   become: "{{ item.name }}"
+#   file:
+#     path: "/home/{{ item.name }}/.docker"
+#     state: directory
+#     owner: "{{ item.name }}"
+#     group: "{{ item.name }}"
+#   loop: "{{ docker_ce_users }}"
+
+# - name: Debug docker config
+#   debug:
+#     var: config
+
+# - name: Generate docker user config
+#   register: docker_daemon_config
+#   when: docker_ce_auths is defined
+#   copy:
+#     content: "{{ config | to_nice_json }}"
+#     dest: "/home/{{ item.name }}/.docker/config.json"
+#   loop: "{{ docker_ce_users }}"
