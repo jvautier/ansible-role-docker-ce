@@ -1,4 +1,5 @@
 ---
+# See https://github.com/jvautier/project-cli
 fullname: jvautier/ansible-role-docker-ce
 description: Install docker-ce through ansible
 tags:
