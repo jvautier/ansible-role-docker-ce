@@ -1,0 +1,8 @@
+---
+fullname: jvautier/ansible-role-docker-ce
+description: Install docker-ce through ansible
+tags:
+  - ansible
+  - ansible-role
+  - docker-ce
+github: {}
